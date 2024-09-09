@@ -3,8 +3,16 @@ const path = require('path');
 var chokidar = require('chokidar');
 
 var homedir = process.argv[2];                                         //Parameter 1
-var docsdir = '/storage/emulated/0/Documents/'+path.basename(homedir); //Shoud be standard on all Android devices
+var overwrite = process.argv[3];                                       //Parameter 2
 var errs = 0;
+
+if (homedir == undefined) {
+  console.log('USAGE : node andfswatch.js source_directory {-f}');
+  console.log('OPTION: -f force overwrite of Documents directory');
+  process.exit(1);
+}
+
+var docsdir = '/storage/emulated/0/Documents/'+path.basename(homedir); //Shoud be standard on all Android devices
 
 if (! fs.existsSync(homedir)) {
   console.log('SRC: '+homedir+' does NOT exist.');
@@ -16,22 +24,21 @@ if (! fs.existsSync(homedir)) {
   }
 }
 
+if (fs.existsSync(docsdir) && overwrite != undefined && overwrite == '-f') { fsremove(docsdir, '-init'); }
 if (! fs.existsSync(docsdir)) {
-    fs.cp(homedir, docsdir, { recursive: true }, (err) => {
-     if (err) { 
-	console.log('DEST: FAILED to setup '+homedir+monidir); 
-	throw err;
-     }
-    });
+  fscopy(homedir, docsdir, '-init');
 } else {
   if (! fs.lstatSync(homedir).isDirectory()) {
     console.log('DEST: '+homedir+' NOT a directory.');
+    errs++;
+  } else {
+    console.log('Destination Documents directory exists, specify -f option to overwrite.');
     errs++;
   }
 }
 
 if (errs == 0) {
-  console.log('Source : ' + docsdir + ' - Destination : ' + homedir);
+  console.log('WATCHED : ' + docsdir + ' : Destination=' + homedir);
   var docswatcher = chokidar.watch(docsdir, {ignored: /^\./, ignoreInitial: true, persistent: true});
   docswatcher
   .on('change', function(path) {
@@ -54,22 +61,26 @@ if (errs == 0) {
   })
 }
 
-function fsremove(path) {                                           //unlink, unlinkdir
-  fs.rm(path, { recursive: true, force: true }, (err) => {
-  if (err) { 
-	console.log('FAILED REMOVE : '+path.replace(docsdir,homedir)); 
-  } else {
-  	console.log('REMOVED : '+path.replace(docsdir,homedir));
-  }
-  });
+function fsremove(path, opt) {                                           //unlink, unlinkdir
+var msg = path.replace(docsdir,homedir);
+if (opt != undefined && opt == '-init') { msg = path; }
+try {
+    fs.rmSync(path, { awaitWriteFinish: true, recursive: true, force: true });
+    console.log('REMOVED : '+msg);
+} catch(error) {
+    console.log('FAILED REMOVE : '+msg); 
+}
 }
 
-function fscopy(path, dest) {                                       //add, addDir, change
-  fs.cp(path, dest, { recursive: true }, (err) => {
-  if (err) { 
-	console.log('FAILED COPY : '+path.replace(docsdir,homedir)); 
-  } else {
- 	console.log('UPDATED : '+path.replace(docsdir,homedir));
-  }
-  });
+function fscopy(path, dest, opt) {                                       //add, addDir, change
+var msg = path.replace(docsdir,homedir);
+if (opt != undefined && opt == '-init') { msg = dest; }
+try {
+    fs.cpSync(path, dest, { awaitWriteFinish: true, recursive: true });
+    console.log('UPDATED : '+msg);
+} catch(error) {
+    console.log('FAILED COPY : '+msg); 
 }
+}
+
+
