@@ -1,8 +1,8 @@
-const fs = require('fs');
-const path = require('path');
-var chokidar = require('chokidar');
+const fs       = require('fs');
+const path     = require('path');
+const chokidar = require('chokidar');
 
-var homedir = process.argv[2];                                         //Parameter 1
+var homedir   = process.argv[2];                                       //Parameter 1
 var overwrite = process.argv[3];                                       //Parameter 2
 var errs = 0;
 
