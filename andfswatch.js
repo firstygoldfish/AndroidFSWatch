@@ -14,7 +14,7 @@ if (homedir == undefined) {
 
 var docsdir = '/storage/emulated/0/Documents/'+path.basename(homedir); //Shoud be standard on all Android devices
 
-if (! fs.existsSync(homedir)) {
+if (! fs.existsSync(homedir)) {                                        //Check watched directory exists
   console.log('Directory '+homedir+' does NOT exist.');
   process.exit(1);
 } else {
@@ -24,16 +24,15 @@ if (! fs.existsSync(homedir)) {
   }
 }
 
-if (fs.existsSync(docsdir) && overwrite != undefined && overwrite == '-f') { fsremove(docsdir, 'init'); }
-if (! fs.existsSync(docsdir)) {
+if (fs.existsSync(docsdir) && overwrite != undefined && overwrite == '-f') { fsremove(docsdir, 'init'); }  //Clear down  Documents directory
+if (! fs.existsSync(docsdir)) {                                                                            //Copy Documents directory
     fscopy(homedir, docsdir, 'init');
 } else {
     console.log(docsdir+' exists, specify -f option to overwrite.');
     process.exit(2);
 }
 
-console.log('WATCHED : ' + docsdir + ' : Destination=' + homedir);
-var docswatcher = chokidar.watch(docsdir, {ignored: /^\./, ignoreInitial: true, persistent: true});
+var docswatcher = chokidar.watch(docsdir, {ignored: /^\./, ignoreInitial: true, persistent: true});       //Setup watcher
 docswatcher
 .on('change', function(path) {
 	fscopy(path, path.replace(docsdir,homedir));
@@ -53,8 +52,9 @@ docswatcher
 .on('error', function(error) {
 	  console.error('Error happened', error);
 })
+console.log('WATCHED : ' + docsdir + ' : Destination=' + homedir);
 
-function fsremove(path, opt) {                                           //unlink, unlinkdir
+function fsremove(path, opt) {                                                                           //unlink, unlinkdir
   var msg = path.replace(docsdir,homedir);
   if (opt != undefined && opt == 'init') { msg = path; }
   try {
@@ -65,7 +65,7 @@ function fsremove(path, opt) {                                           //unlin
   }
 }
 
-function fscopy(path, dest, opt) {                                       //add, addDir, change
+function fscopy(path, dest, opt) {                                                                       //add, addDir, change
   var msg = path.replace(docsdir,homedir);
   if (opt != undefined && opt == 'init') { msg = dest; }
   try {
